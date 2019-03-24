@@ -1,0 +1,42 @@
+class NeuralNetwork():
+    def __init__(self,inp_sz,hid_sz,out_sz):
+        self.inp_sz  = inp_sz                            # size of input data
+        self.out_sz  = out_sz                            # size of output data
+        self.hid_sz  = hid_sz                            # sizes of hidden layers (goal to contain multiple)
+        
+        self.weight1 = np.random.randn(inp_sz, hid_sz)   # creates random weights on each all of the edges
+        self.weighto = np.random.randn(hid_sz, out_sz)   # for now there are only two
+                
+    def forward(self, x):
+        self.shift1 = x @ self.weight1                   # shift across the first set of chords
+        self.nodes1 = self.sigmoid(self.shift1)          # the first layer of nodes (input is the 0th node level)
+        self.shifto = self.nodes1 @ self.weighto         # the last shift (output)
+        return self.sigmoid(self.shifto)                 # returns the sigmoid of the last shift
+
+    def backward(self, x, y, output):
+        self.out_err   = np.subtract(y[:,np.newaxis], output)     # difference between the [previous output and the training data]
+        self.out_dlta  = self.out_err*self.sigmoidP(output)       # normalizing the error
+        
+        self.nds1_err  = self.out_dlta @ self.weighto.T           # calculating the error of each layer of edges
+        self.nds1_dlta = self.nds1_err*self.sigmoidP(self.nodes1) # normalizing the error
+        
+        self.weight1   = np.array(np.matmul(np.matrix(x).T,np.matrix(self.nds1_dlta)))   # recalculating the weights on the edges
+        self.weighto   = np.array(np.matmul(np.matrix(self.nodes1).T,np.matrix(self.out_dlta)))
+        
+    def sigmoid(self,x):
+        return 1/(1+np.exp(-x))
+        
+    def sigmoidP(self,x):   # sigmoid derivative
+        return self.sigmoid(x)*(1 - self.sigmoid(x))
+    
+    def getWeights(self):
+        return (str(self.weight1)+"\n" + str(self.weighto))
+    
+    def train (self, x, y):
+        output = self.forward(x)          # trains data on input x
+        self.backward(x, y, output)       # reassigns new weights to the edges for next training run
+            
+    def predict(self,x_predict):             # For use after we have trained the neural network
+        print("Predicted data based on trained weights: ")
+        print("Input (scaled): \n" + str(x_predict))
+        print("Output: \n" + str(self.forward(x_predict)))
